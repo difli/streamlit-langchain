@@ -178,13 +178,32 @@ def load_rails(username):
     rails_dict = {df.key.to_list()[i]:df.value.to_list()[i] for i in range(len(df.key.to_list()))}
     return rails_dict
 
+import requests
+
+def download_file(url, file_name):
+    # Send a GET request to the URL
+    response = requests.get(url)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Open a file in the default directory with the specified file name
+        # 'wb' mode is used to write the file in binary mode
+        with open(file_name, 'wb') as file:
+            file.write(response.content)
+    else:
+        print(f"Failed to download the file. Status code: {response.status_code}")
+
 # Cache Astra DB session for future runs
 @st.cache_resource(show_spinner=lang_dict['connect_astra'])
 def load_session():
     print("load_session")
+    bundle_url = st.secrets["ASTRA_SCB_PATH"]  # Replace with your URL
+    bundle_file_name = "secure_connect_bundle.zip"  # Replace with your desired file name
+    download_file(bundle_url, bundle_file_name)
+
     # Connect to Astra DB
-    cluster = Cluster(cloud={'secure_connect_bundle': st.secrets["ASTRA_SCB_PATH"]}, 
-                    auth_provider=PlainTextAuthProvider(st.secrets["ASTRA_CLIENT_ID"], 
+    cluster = Cluster(cloud={'secure_connect_bundle': bundle_file_name},
+                    auth_provider=PlainTextAuthProvider(st.secrets["ASTRA_CLIENT_ID"],
                                                         st.secrets["ASTRA_CLIENT_SECRET"]))
     return cluster.connect()
 

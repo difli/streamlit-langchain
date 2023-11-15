@@ -165,7 +165,7 @@ def load_localization(locale):
     # Create and return a dictionary of key/values.
     lang_dict = {df.key.to_list()[i]:df.value.to_list()[i] for i in range(len(df.key.to_list()))}
     return lang_dict
-lang_dict = load_localization('en_US')
+lang_dict = load_localization('ro_RO')
 
 # Cache localized strings
 @st.cache_data()

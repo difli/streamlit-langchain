@@ -186,13 +186,18 @@ def download_file(url, file_name):
 
     # Check if the request was successful
     if response.status_code == 200:
-        # Open a file in the default directory with the specified file name
+        # Get the full path of the directory where the file will be saved
+        dir_path = os.getcwd()
+        full_path = os.path.join(dir_path, file_name)
+
+        # Open a file with the specified file name
         # 'wb' mode is used to write the file in binary mode
-        with open(file_name, 'wb') as file:
+        with open(full_path, 'wb') as file:
             file.write(response.content)
+        return full_path
     else:
         print(f"Failed to download the file. Status code: {response.status_code}")
-
+        return None
 # Cache Astra DB session for future runs
 @st.cache_resource(show_spinner=lang_dict['connect_astra'])
 def load_session():
@@ -200,9 +205,10 @@ def load_session():
     bundle_url = st.secrets["ASTRA_SCB_PATH"]  # Replace with your URL
     bundle_file_name = "secure_connect_bundle.zip"  # Replace with your desired file name
     download_file(bundle_url, bundle_file_name)
+    full_path = download_file(bundle_url, bundle_file_name)
 
     # Connect to Astra DB
-    cluster = Cluster(cloud={'secure_connect_bundle': bundle_file_name},
+    cluster = Cluster(cloud={'secure_connect_bundle': full_path},
                     auth_provider=PlainTextAuthProvider(st.secrets["ASTRA_CLIENT_ID"],
                                                         st.secrets["ASTRA_CLIENT_SECRET"]))
     return cluster.connect()

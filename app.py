@@ -1,8 +1,6 @@
 import os
-import shutil
-
+import hmac
 import streamlit as st
-from pathlib import Path
 
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 #os.environ["LANGCHAIN_API_KEY"] = st.secrets['LANGCHAIN_API_KEY']
@@ -33,6 +31,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 print("Started")
 
+
 # Streaming call back handler for responses
 class StreamHandler(BaseCallbackHandler):
     def __init__(self, container, initial_text=""):
@@ -43,6 +42,7 @@ class StreamHandler(BaseCallbackHandler):
         self.text += token
         self.container.markdown(self.text + "▌")
 
+
 #################
 ### Constants ###
 #################
@@ -51,15 +51,11 @@ class StreamHandler(BaseCallbackHandler):
 top_k_vectorstore = 4
 top_k_memory = 3
 
-# Define the language options
-lang_options = {
-    '🇺🇸 English User interface': 'en_US',
-    '🇳🇱 Nederlandse gebruikers interface': 'nl_NL',
-    '🇷🇴 Interfață utilizator română': 'ro_RO',
-}
+# Define the language option for localization
+language = 'en_US'
 
 # Defines the vector tables, memory and rails to use
-username = 'nn'
+username = st.secrets["USERNAME"]
 
 ###############
 ### Globals ###
@@ -75,81 +71,71 @@ global model
 global chat_history
 global memory
 
+
 #################
 ### Functions ###
 #################
 
+# Close off the app using a password
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hmac.compare_digest(st.session_state["password"], st.secrets["PASSWORD"]):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store the password.
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password.
+    st.text_input(
+        lang_dict['password'], type="password", on_change=password_entered, key="password"
+    )
+    if "password_correct" in st.session_state:
+        st.error(lang_dict['password_incorrect'])
+    return False
+
+
 # Function for Vectorizing uploaded data into Astra DB
-def vectorize_text(uploaded_file):
-    if uploaded_file is not None:
-        
-        # Write to temporary file
-        temp_dir = tempfile.TemporaryDirectory()
-        file = uploaded_file
-        print("""Processing: {file}""")
-        temp_filepath = os.path.join(temp_dir.name, file.name)
-        with open(temp_filepath, "wb") as f:
-            f.write(file.getvalue())
+def vectorize_text(uploaded_files):
+    for uploaded_file in uploaded_files:
+        if uploaded_file is not None:
 
-        # Create the text splitter
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size = 1500,
-            chunk_overlap  = 100
-        )
+            # Write to temporary file
+            temp_dir = tempfile.TemporaryDirectory()
+            file = uploaded_file
+            print(f"""Processing: {file}""")
+            temp_filepath = os.path.join(temp_dir.name, file.name)
+            with open(temp_filepath, "wb") as f:
+                f.write(file.getvalue())
 
-        if uploaded_file.name.endswith('txt'):
-            file = [uploaded_file.read().decode()]
-            texts = text_splitter.create_documents(file, [{'source': uploaded_file.name}])
-            vectorstore.add_documents(texts)
-            st.info(f"{len(texts)} {lang_dict['load_text']}")
+            # Create the text splitter
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1500,
+                chunk_overlap=100
+            )
 
-        if uploaded_file.name.endswith('pdf'):
-            # Read PDF
-            docs = []
-            loader = PyPDFLoader(temp_filepath)
-            docs.extend(loader.load())
+            if uploaded_file.name.endswith('txt'):
+                file = [uploaded_file.read().decode()]
+                texts = text_splitter.create_documents(file, [{'source': uploaded_file.name}])
+                vectorstore.add_documents(texts)
+                st.info(f"{len(texts)} {lang_dict['load_text']}")
 
-            pages = text_splitter.split_documents(docs)
-            vectorstore.add_documents(pages)  
-            st.info(f"{len(pages)} {lang_dict['load_pdf']}")
+            if uploaded_file.name.endswith('pdf'):
+                # Read PDF
+                docs = []
+                loader = PyPDFLoader(temp_filepath)
+                docs.extend(loader.load())
 
+                pages = text_splitter.split_documents(docs)
+                vectorstore.add_documents(pages)
+                st.info(f"{len(pages)} {lang_dict['load_pdf']}")
 
-# Function to process all files in the 'documents' folder
-def process_documents_folder(folder_path):
-    for file_path in Path(folder_path).glob('*'):
-        if file_path.is_file() and file_path.suffix in ['.txt', '.pdf']:
-            print(f"Processing file: {file_path}")
-
-            file_path = str(file_path)
-            if file_path is not None:
-                # Write to temporary file
-                temp_dir = tempfile.TemporaryDirectory()
-                print(f"Processing: {file_path}")
-                temp_filepath = os.path.join(temp_dir.name, os.path.basename(file_path))
-                shutil.copy(file_path, temp_filepath)
-
-                # Create the text splitter
-                text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=1500,
-                    chunk_overlap=100
-                )
-
-                if file_path.endswith('.txt'):
-                    with open(temp_filepath, 'r') as file:
-                        file_content = [file.read()]
-                    texts = text_splitter.create_documents(file_content, [{'source': file_path}])
-                    vectorstore.add_documents(texts)
-                    print(f"{len(texts)} documents processed from text file.")
-
-                elif file_path.endswith('.pdf'):
-                    # Read PDF
-                    docs = []
-                    loader = PyPDFLoader(temp_filepath)
-                    docs.extend(loader.load())
-
-                    pages = text_splitter.split_documents(docs)
-                    vectorstore.add_documents(pages)
-                    print(f"{len(pages)} documents processed from PDF file.")
 
 ################################
 ### Resources and Data Cache ###
@@ -163,9 +149,12 @@ def load_localization(locale):
     df = pd.read_csv("localization.csv")
     df = df.query(f"locale == '{locale}'")
     # Create and return a dictionary of key/values.
-    lang_dict = {df.key.to_list()[i]:df.value.to_list()[i] for i in range(len(df.key.to_list()))}
+    lang_dict = {df.key.to_list()[i]: df.value.to_list()[i] for i in range(len(df.key.to_list()))}
     return lang_dict
-lang_dict = load_localization('ro_RO')
+
+
+lang_dict = load_localization(language)
+
 
 # Cache localized strings
 @st.cache_data()
@@ -175,11 +164,11 @@ def load_rails(username):
     df = pd.read_csv("rails.csv")
     df = df.query(f"username == '{username}'")
     # Create and return a dictionary of key/values.
-    rails_dict = {df.key.to_list()[i]:df.value.to_list()[i] for i in range(len(df.key.to_list()))}
+    rails_dict = {df.key.to_list()[i]: df.value.to_list()[i] for i in range(len(df.key.to_list()))}
     return rails_dict
 
-import requests
 
+# Cache Astra DB session for future runs
 def download_file(url, file_name):
     # Send a GET request to the URL
     response = requests.get(url)
@@ -220,6 +209,7 @@ def load_embedding():
     # Get the OpenAI Embedding
     return OpenAIEmbeddings()
 
+
 # Cache Vector Store for future runs
 @st.cache_resource(show_spinner=lang_dict['load_vectorstore'])
 def load_vectorstore(username):
@@ -228,10 +218,11 @@ def load_vectorstore(username):
     return Cassandra(
         embedding=embedding,
         session=session,
-        keyspace='nn',
+        keyspace='demo',
         table_name=f"vector_context_{username}"
     )
-    
+
+
 # Cache Retriever for future runs
 @st.cache_resource(show_spinner=lang_dict['load_retriever'])
 def load_retriever():
@@ -240,6 +231,7 @@ def load_retriever():
     return vectorstore.as_retriever(
         search_kwargs={"k": top_k_vectorstore}
     )
+
 
 # Cache OpenAI Chat Model for future runs
 @st.cache_resource(show_spinner=lang_dict['load_model'])
@@ -253,6 +245,7 @@ def load_model():
         verbose=True
     )
 
+
 # Cache Chat History for future runs
 @st.cache_resource(show_spinner=lang_dict['load_message_history'])
 def load_chat_history(username):
@@ -260,9 +253,10 @@ def load_chat_history(username):
     return CassandraChatMessageHistory(
         session_id=username,
         session=session,
-        keyspace='nn',
-        ttl_seconds = 864000 # Ten days
+        keyspace='demo',
+        ttl_seconds=864000  # Ten days
     )
+
 
 @st.cache_resource(show_spinner=lang_dict['load_message_history'])
 def load_memory():
@@ -275,6 +269,7 @@ def load_memory():
         input_key="question",
         output_key='answer',
     )
+
 
 # Cache prompt
 @st.cache_data()
@@ -297,6 +292,7 @@ Answer in the user's language:"""
 
     return ChatPromptTemplate.from_messages([("system", template)])
 
+
 #####################
 ### Session state ###
 #####################
@@ -308,6 +304,10 @@ if 'messages' not in st.session_state:
 ############
 ### Main ###
 ############
+
+# Check for password
+if not check_password():
+    st.stop()  # Do not continue if check_password is not True.
 
 with st.sidebar:
     st.image('./assets/datastax-logo.svg')
@@ -326,8 +326,10 @@ Also they are trained upon a moment in time, so typically miss out on relevant a
 
 #### What does it know?
 The app has been preloaded with the following context:
-- [PDF Factsheet NN România](https://www.nn.ro/sites/default/files/2023-05/nn_romania_factsheet_2023_ro.pdf)
-- [PDF Prospectul Simplificat al Schemei de Pensii Facultative al Fondului de Pensii Facultative NN ACTIV](https://www.nn.ro/sites/default/files/2023-06/Prospectul%20simplificat%20al%20schemei%20de%20pensii%20facultative%20NN%20ACTIV%20in%20vigoare%20%28Iunie%202023%29.pdf)
+- [PDF met Business Principles](https://www.postnl.nl/Images/business-principles-nl_tcm10-66407.pdf)
+- [PDF met haalservice aanbod](https://www.postnl.nl/Images/aanleveren-pakketten_tcm10-236964.pdf)
+- [Webpagina over zakelijk aanbod](https://www.postnl.nl/zakelijke-oplossingen/)
+- [Webpagina over duurzaamheid](https://www.postnl.nl/zakelijke-oplossingen/duurzaamheid/)
 
 This means you can start interacting with your personal assistant based on the above topics.
 
@@ -350,14 +352,11 @@ with st.sidebar:
     chat_history = load_chat_history(username)
     memory = load_memory()
     prompt = load_prompt()
-    # Call the function to process the documents folder
-    # documents_folder = './documents'
-    # process_documents_folder(documents_folder)
 
 # Include the upload form for new data to be Vectorized
 with st.sidebar:
     with st.form('upload'):
-        uploaded_file = st.file_uploader(lang_dict['load_context'], type=['txt', 'pdf'], )
+        uploaded_file = st.file_uploader(lang_dict['load_context'], type=['txt', 'pdf'], accept_multiple_files=True)
         submitted = st.form_submit_button(lang_dict['load_context_button'])
         if submitted:
             vectorize_text(uploaded_file)
@@ -385,11 +384,11 @@ with st.sidebar:
 
 # Draw rails
 with st.sidebar:
-        st.subheader(rails_dict[0])
-        st.caption(rails_dict[1])
-        for i in rails_dict:
-            if i>1:
-                st.markdown(f"{i-1}. {rails_dict[i]}")
+    st.subheader(rails_dict[0])
+    st.caption(rails_dict[1])
+    for i in rails_dict:
+        if i > 1:
+            st.markdown(f"{i - 1}. {rails_dict[i]}")
 
 # Draw all messages, both user and agent so far (every time the app reruns)
 for message in st.session_state.messages:
@@ -435,7 +434,7 @@ if question := st.chat_input(lang_dict['assistant_question']):
         # Write the sources used
         relevant_documents = retriever.get_relevant_documents(question)
         content += """
-        
+
 *The following context was used for this answer:*  
 """
         sources = []
@@ -458,4 +457,4 @@ if question := st.chat_input(lang_dict['assistant_question']):
         st.session_state.messages.append(AIMessage(content=content))
 
 with st.sidebar:
-            st.caption("v11.07.01")
+    st.caption("v11.07.01")

@@ -25,22 +25,22 @@ nl_NL,load_context,Upload een document voor additionele context
 ro_RO,load_context,Încărcați un document pentru context suplimentar
 en_US,load_context_button,Save
 nl_NL,load_context_button,Opslaan
-ro_RO,load_context_button,Salvează
+ro_RO,load_context_button,Salvați
 en_US,delete_context,"Delete the context, history and start over. This deletes vector embeddings for ALL users!"
 nl_NL,delete_context,"Verwijder de context, historie en begin opnieuw. Dit verwijderd vector data voor ALLE gebruikers!"
-ro_RO,delete_context,"Ștergeți contextul, istoricul și începeți din nou. Acest lucru șterge embedding-urile vectoriale pentru TOȚI utilizatorii!"
+ro_RO,delete_context,"Ștergeți contextul, istoria și începeți din nou. Aceasta șterge încorporările vectoriale pentru TOȚI utilizatorii!"
 en_US,deleting_context,Removing context and intialising...
 nl_NL,deleting_context,Context verwijderen en herinitialiseren...
-ro_RO,deleting_context,Se elimină contextul și se inițializează...
+ro_RO,deleting_context,Înlăturarea contextului și inițializarea...
 en_US,delete_context_button,Delete context
 nl_NL,delete_context_button,Verwijder context
 ro_RO,delete_context_button,Șterge contextul
 en_US,delete_memory,"Delete the history in the conversational memory."
 nl_NL,delete_memory,"Verwijder de historie uit het chat geheugen."
-ro_RO,delete_memory,"Ștergeți istoricul din memoria conversației."
+ro_RO,delete_memory,"Ștergeți istoria din memoria conversației."
 en_US,deleting_memory,Removing memory...
 nl_NL,deleting_memory,Memory verwijderen...
-ro_RO,deleting_memory,Se elimină memoria...
+ro_RO,deleting_memory,Ștergerea memoriei...
 en_US,delete_memory_button,Delete chat history
 nl_NL,delete_memory_button,Verwijder chat historie
 ro_RO,delete_memory_button,Șterge istoricul chatului
@@ -49,13 +49,19 @@ nl_NL,assistant_welcome,"Hallo, ik ben je persoonlijke assistent en sta voor je 
 ro_RO,assistant_welcome,"Salut, sunt asistentul tău personal și sunt gata să ajut!"
 en_US,assistant_question,What's up?
 nl_NL,assistant_question,Waar kan ik mee helpen?
-ro_RO,assistant_question,Ce mai faci?
+ro_RO,assistant_question,Ce se întâmplă?
 en_US,load_text,chuncks loaded into Astra DB
 nl_NL,load_text,chuncks geladen in Astra DB
-ro_RO,load_text,bucăți încărcate în Astra DB
+ro_RO,load_text,Fragmente încărcate în Astra DB
 en_US,load_pdf,pages loaded into Astra DB
 nl_NL,load_pdf,paginas geladen in Astra DB
 ro_RO,load_pdf,pagini încărcate în Astra DB
 en_US,assistant_leadin,Type for example:
 nl_NL,assistant_leadin,Bijvoorbeeld:
-ro_RO,assistant_leadin,De exemplu:
+ro_RO,assistant_leadin,Scrie de exemplu:
+en_US,password,Password
+nl_NL,password,Wachtwoord
+ro_RO,password,Parolă
+en_US,password_incorrect,😕 Password incorrect
+nl_NL,password_incorrect,😕 Foutief wachtwoord
+ro_RO,password_incorrect,😕 Parolă incorectă

@@ -53,7 +53,7 @@ top_k_vectorstore = 4
 top_k_memory = 3
 
 # Define the language option for localization
-language = 'en_US'
+language = 'ro_RO'
 
 # Defines the vector tables, memory and rails to use
 username = st.secrets["USERNAME"]
@@ -327,10 +327,8 @@ Also they are trained upon a moment in time, so typically miss out on relevant a
 
 #### What does it know?
 The app has been preloaded with the following context:
-- [PDF met Business Principles](https://www.postnl.nl/Images/business-principles-nl_tcm10-66407.pdf)
-- [PDF met haalservice aanbod](https://www.postnl.nl/Images/aanleveren-pakketten_tcm10-236964.pdf)
-- [Webpagina over zakelijk aanbod](https://www.postnl.nl/zakelijke-oplossingen/)
-- [Webpagina over duurzaamheid](https://www.postnl.nl/zakelijke-oplossingen/duurzaamheid/)
+- [PDF Factsheet NN România](https://www.nn.ro/sites/default/files/2023-05/nn_romania_factsheet_2023_ro.pdf)
+- [PDF Prospectul Simplificat al Schemei de Pensii Facultative al Fondului de Pensii Facultative NN ACTIV](https://www.nn.ro/sites/default/files/2023-06/Prospectul%20simplificat%20al%20schemei%20de%20pensii%20facultative%20NN%20ACTIV%20in%20vigoare%20%28Iunie%202023%29.pdf)
 
 This means you can start interacting with your personal assistant based on the above topics.
 

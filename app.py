@@ -1,6 +1,7 @@
 import os
 import hmac
 import streamlit as st
+import requests
 
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 #os.environ["LANGCHAIN_API_KEY"] = st.secrets['LANGCHAIN_API_KEY']
